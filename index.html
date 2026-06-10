@@ -97,7 +97,7 @@
             <tr><td class="rl">Avg returning uploader rate</td><td>—</td><td>67.9%</td><td>72.2%</td></tr>
           </tbody>
         </table>
-        <div class="note">Benchmarks from 38 historical Primo promotions (2022–2026). Recommended mechanic: Engagement → Hybrid (lowest CPE), Acquisition → Receipt (highest acquisition rate), Retention → Hybrid (highest returning uploader rate).</div>
+        <div class="note">Benchmarks from 38 historical Primo promotions (2022–2026). The recommended mechanic is the one that delivers the most of your objective's key KPI: Engagement → most entries, Acquisition → most new members, Retention → most returning uploaders.</div>
       </div>
     </div>
 
@@ -140,7 +140,6 @@
 </div>
 <script>
 const B={sweepstakes:{cpe:80.09,cpa:360.49,ret:null},receipt:{cpe:2.9455,cpa:36.415,ret:0.67934},hybrid:{cpe:7.1046,cpa:27.075,ret:0.72234}};
-const REC={engagement:'hybrid',acquisition:'receipt',retention:'hybrid'};
 const KPI={engagement:'Entries',acquisition:'New Members',retention:'Returning Uploaders'};
 const LABEL={sweepstakes:'SWEEPSTAKES',receipt:'RECEIPT',hybrid:'HYBRID'};
 function parseNum(s){return parseFloat(s.replace(/,/g,''))||0;}
@@ -153,7 +152,28 @@ function calc(){
   const build=parseNum(document.getElementById('build').value);
   const media=parseNum(document.getElementById('media').value);
   const total=build+media;
-  const rec=REC[obj];
+
+  // Calculate all 3 mechanics, then pick best for the objective (matches Excel logic)
+  const keys=['sweepstakes','receipt','hybrid'];
+  const calcs={};
+  keys.forEach(k=>{
+    const bb=B[k];
+    const ent=total>0?total/bb.cpe:0;
+    const mem=total>0?total/bb.cpa:0;
+    const ret=bb.ret?ent*bb.ret:0;
+    calcs[k]={ent,mem,ret};
+  });
+
+  // Engagement -> most entries; Acquisition -> most members; Retention -> most returning uploaders
+  let rec;
+  if(obj==='engagement'){
+    rec=keys.reduce((a,b)=>calcs[a].ent>=calcs[b].ent?a:b);
+  } else if(obj==='acquisition'){
+    rec=keys.reduce((a,b)=>calcs[a].mem>=calcs[b].mem?a:b);
+  } else {
+    rec=keys.reduce((a,b)=>calcs[a].ret>=calcs[b].ret?a:b);
+  }
+
   const b=B[rec];
   document.getElementById('totalDisp').textContent='$'+fmt(total);
   document.getElementById('kpiLabel').textContent=KPI[obj];
